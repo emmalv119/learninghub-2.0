@@ -161,6 +161,16 @@ var categoryBarColor = {
   '其他': 'rgba(139,148,158,0.6)'
 };
 
+// 别名映射：兼容 Firebase 中非标准的 category 值
+var categoryAlias = {
+  'EN': '英语', 'English': '英语', 'english': '英语',
+  'Spanish': '西班牙语', 'Español': '西班牙语', 'spanish': '西班牙语',
+  'Reading': '阅读', 'reading': '阅读',
+  'HR': 'Human Resources', 'hr': 'Human Resources',
+  'Others': '其他', 'other': '其他', 'Other': '其他'
+};
+function normCat(c) { return categoryAlias[c] || c; }
+
 function initApp() {
   seedIfEmpty();
   updateDashboard();
@@ -277,7 +287,7 @@ return streak;
 }
 function renderRecentActivity() {
 var activities = [];
-resources.forEach(function(r) { activities.push({ text: '添加了资源「' + r.name + '」(' + (categoryLabel[r.category] || r.category) + ')', time: r.createdAt, icon: '🔗' }); });
+resources.forEach(function(r) { activities.push({ text: '添加了资源「' + r.name + '」(' + (categoryLabel[normCat(r.category)] || r.category) + ')', time: r.createdAt, icon: '🔗' }); });
 checkins.forEach(function(c) { activities.push({ text: '完成学习打卡 ' + (c.mood || ''), time: c.createdAt, icon: '✅' }); });
 notes.forEach(function(n) { activities.push({ text: '写了笔记「' + n.title + '」', time: n.createdAt, icon: '📝' }); });
 activities.sort(function(a, b) { return new Date(b.time) - new Date(a.time); });
@@ -292,7 +302,7 @@ return '<div class="activity-item"><span class="activity-icon">' + a.icon + '</s
 }
 function renderCategoryBars() {
 var counts = {};
-resources.forEach(function(r) { counts[r.category] = (counts[r.category] || 0) + 1; });
+resources.forEach(function(r) { var nc = normCat(r.category); counts[nc] = (counts[nc] || 0) + 1; });
 var el = document.getElementById('platform-bars');
 var entries = Object.entries(counts).sort(function(a, b) { return b[1] - a[1]; });
 if (entries.length === 0) {
@@ -404,7 +414,7 @@ if (!filter) filter = 'all';
 if (!search) search = '';
 var el = document.getElementById('resources-grid');
 var filtered = resources;
-if (filter !== 'all') filtered = filtered.filter(function(r) { return r.category === filter; });
+if (filter !== 'all') filtered = filtered.filter(function(r) { return normCat(r.category) === filter; });
 if (search) {
 var q = search.toLowerCase();
 filtered = filtered.filter(function(r) {
@@ -419,7 +429,7 @@ filtered.sort(function(a, b) { return new Date(b.createdAt) - new Date(a.created
 el.innerHTML = filtered.map(function(r) {
 return '<div class="resource-card">' +
 '<div class="resource-header"><div class="resource-name">' + escapeHtml(r.name) + '</div><div class="resource-actions"><button class="action-btn" onclick="openResourceModal(\'' + r.id + '\')" title="编辑">✏️</button><button class="action-btn delete" onclick="deleteResource(\'' + r.id + '\')" title="删除">🗑</button></div></div>' +
-'<div class="resource-platform ' + (categoryClass[r.category] || 'cat-other') + '">' + (categoryEmoji[r.category] || '📦') + ' ' + r.category + '</div>' +
+'<div class="resource-platform ' + (categoryClass[normCat(r.category)] || 'cat-other') + '">' + (categoryLabel[normCat(r.category)] || (categoryEmoji[normCat(r.category)] || '📦') + ' ' + r.category) + '</div>' +
 '<a href="' + escapeHtml(r.url) + '" target="_blank" class="resource-url">' + escapeHtml(r.url) + '</a>' +
 (r.note ? '<div class="resource-note">' + escapeHtml(r.note) + '</div>' : '') +
 (r.tags && r.tags.length ? '<div class="resource-tags">' + r.tags.map(function(t) { return '<span class="resource-tag">' + escapeHtml(t) + '</span>'; }).join('') + '</div>' : '') +
@@ -440,7 +450,7 @@ filterResources();
 }
 function updateFilterTags() {
 var catsSet = {};
-resources.forEach(function(r) { catsSet[r.category] = true; });
+resources.forEach(function(r) { catsSet[normCat(r.category)] = true; });
 var cats = Object.keys(catsSet);
 var el = document.getElementById('filter-tags');
 el.innerHTML = '<button class="tag-btn active" onclick="filterByCategory(\'all\', this)">全部</button>' +
