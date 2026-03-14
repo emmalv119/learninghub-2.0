@@ -1,353 +1,347 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Hub - 学习资源聚合中心</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Hub - 学习资源聚合中心</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!-- Firebase SDK (CDN 方式，兼容 GitHub Pages) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
-    <!-- ======== Auth Gate ======== -->
-    <div id="auth-gate" class="auth-gate">
-        <div class="auth-card">
-            <div class="auth-logo">
-                <span class="logo-icon">📚</span>
-                <span class="logo-text">Learning Hub</span>
-            </div>
-            <p class="auth-prompt">请回答验证问题以进入</p>
-            <div class="auth-question">Emma的AI娃叫什么？</div>
-            <div class="auth-form">
-                <input type="text" id="auth-input" placeholder="输入答案..." autocomplete="off" autofocus>
-                <button class="btn btn-primary auth-btn" onclick="verifyAnswer()">验证</button>
-            </div>
-            <div class="auth-error" id="auth-error"></div>
-        </div>
-    </div>
-
-    <!-- ======== Main App (hidden until auth) ======== -->
-    <div id="app" class="app-hidden">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <span class="logo-icon">📚</span>
-                    <span class="logo-text">Learning Hub</span>
-                </div>
-            </div>
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard', this)">
-                    <span class="nav-icon">📊</span>
-                    <span>仪表盘</span>
-                </a>
-                <a href="#" class="nav-item" data-page="resources" onclick="switchPage('resources', this)">
-                    <span class="nav-icon">🔗</span>
-                    <span>学习资源</span>
-                </a>
-                <a href="#" class="nav-item" data-page="checkin" onclick="switchPage('checkin', this)">
-                    <span class="nav-icon">✅</span>
-                    <span>学习打卡</span>
-                </a>
-                <a href="#" class="nav-item" data-page="notes" onclick="switchPage('notes', this)">
-                    <span class="nav-icon">📝</span>
-                    <span>学习笔记</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <div class="streak-badge">
-                    <span class="fire">🔥</span>
-                    <span id="sidebar-streak">0</span> 天连续打卡
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Dashboard Page -->
-            <div class="page active" id="page-dashboard">
-                <div class="page-header">
-                    <h1>学习仪表盘</h1>
-                    <p class="subtitle" id="today-date"></p>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card gradient-purple">
-                        <div class="stat-icon">📚</div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="stat-resources">0</div>
-                            <div class="stat-label">学习资源</div>
-                        </div>
-                    </div>
-                    <div class="stat-card gradient-blue">
-                        <div class="stat-icon">✅</div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="stat-checkins">0</div>
-                            <div class="stat-label">总打卡天数</div>
-                        </div>
-                    </div>
-                    <div class="stat-card gradient-green">
-                        <div class="stat-icon">🔥</div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="stat-streak">0</div>
-                            <div class="stat-label">连续打卡</div>
-                        </div>
-                    </div>
-                    <div class="stat-card gradient-orange">
-                        <div class="stat-icon">📝</div>
-                        <div class="stat-info">
-                            <div class="stat-number" id="stat-notes">0</div>
-                            <div class="stat-label">学习笔记</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="dashboard-grid">
-                    <div class="card heatmap-card">
-                        <div class="card-header">
-                            <h3>📅 学习热力图</h3>
-                            <span class="year-label" id="heatmap-year"></span>
-                        </div>
-                        <div class="heatmap-wrapper">
-                            <div class="heatmap-months" id="heatmap-months"></div>
-                            <div class="heatmap-container">
-                                <div class="heatmap-days-label">
-                                    <span>Mon</span><span>Wed</span><span>Fri</span>
-                                </div>
-                                <div class="heatmap" id="heatmap"></div>
-                            </div>
-                            <div class="heatmap-legend">
-                                <span>少</span>
-                                <div class="legend-box" style="background: #1a1a2e"></div>
-                                <div class="legend-box" style="background: #4a3f8a"></div>
-                                <div class="legend-box" style="background: #7c5cbf"></div>
-                                <div class="legend-box" style="background: #a78bfa"></div>
-                                <div class="legend-box" style="background: #c4b5fd"></div>
-                                <span>多</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card recent-card">
-                        <div class="card-header">
-                            <h3>⚡ 最近动态</h3>
-                        </div>
-                        <div class="recent-list" id="recent-activity">
-                            <div class="empty-state-small">暂无动态，开始学习吧！</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card platform-card">
-                    <div class="card-header">
-                        <h3>📦 类别分布</h3>
-                    </div>
-                    <div class="platform-bars" id="platform-bars">
-                        <div class="empty-state-small">添加资源后显示类别分布</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Resources Page -->
-            <div class="page" id="page-resources">
-                <div class="page-header">
-                    <h1>学习资源</h1>
-                    <button class="btn btn-primary" onclick="openResourceModal()">
-                        <span>＋</span> 添加资源
-                    </button>
-                </div>
-                <div class="filter-bar">
-                    <div class="search-box">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="resource-search" placeholder="搜索资源..." oninput="filterResources()">
-                    </div>
-                    <div class="filter-tags" id="filter-tags">
-                        <button class="tag-btn active" onclick="filterByCategory('all', this)">全部</button>
-                    </div>
-                </div>
-                <div class="resources-grid" id="resources-grid">
-                    <div class="empty-state">
-                        <div class="empty-icon">📭</div>
-                        <h3>还没有学习资源</h3>
-                        <p>点击「添加资源」开始聚合你的学习内容</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Check-in Page -->
-            <div class="page" id="page-checkin">
-                <div class="page-header">
-                    <h1>学习打卡</h1>
-                    <button class="btn btn-primary" id="checkin-btn" onclick="doCheckin()">
-                        <span>✅</span> 今日打卡
-                    </button>
-                </div>
-                <div class="checkin-hero">
-                    <div class="checkin-streak-display">
-                        <div class="streak-number" id="checkin-streak-num">0</div>
-                        <div class="streak-label">天连续打卡</div>
-                    </div>
-                    <div class="checkin-today-status" id="checkin-today-status">今日尚未打卡</div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <button class="btn btn-ghost" onclick="changeMonth(-1)">◀</button>
-                        <h3 id="calendar-month-label"></h3>
-                        <button class="btn btn-ghost" onclick="changeMonth(1)">▶</button>
-                    </div>
-                    <div class="calendar-grid" id="calendar-grid"></div>
-                </div>
-                <div class="card" style="margin-top: 24px;">
-                    <div class="card-header">
-                        <h3>📋 打卡记录</h3>
-                    </div>
-                    <div class="checkin-log" id="checkin-log">
-                        <div class="empty-state-small">暂无打卡记录</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notes Page -->
-            <div class="page" id="page-notes">
-                <div class="page-header">
-                    <h1>学习笔记</h1>
-                    <button class="btn btn-primary" onclick="openNoteModal()">
-                        <span>＋</span> 新建笔记
-                    </button>
-                </div>
-                <div class="notes-layout">
-                    <div class="notes-list" id="notes-list">
-                        <div class="empty-state">
-                            <div class="empty-icon">📝</div>
-                            <h3>还没有笔记</h3>
-                            <p>点击「新建笔记」记录你的学习心得</p>
-                        </div>
-                    </div>
-                    <div class="note-preview" id="note-preview">
-                        <div class="empty-state">
-                            <div class="empty-icon">👈</div>
-                            <h3>选择一个笔记查看</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Resource Modal -->
-    <div class="modal-overlay" id="resource-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="resource-modal-title">添加学习资源</h2>
-                <button class="modal-close" onclick="closeResourceModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>资源名称 *</label>
-                    <input type="text" id="res-name" placeholder="例：English Grammar In Use">
-                </div>
-                <div class="form-group">
-                    <label>链接 URL *</label>
-                    <input type="url" id="res-url" placeholder="https://...">
-                </div>
-                <div class="form-group">
-                    <label>学习类别</label>
-                    <select id="res-category">
-                        <option value="英语">🇬🇧 English</option>
-                        <option value="西班牙语">🇪🇸 Español</option>
-                        <option value="AI">🤖 AI & Tech</option>
-                        <option value="Human Resources">👥 HR & People</option>
-                        <option value="阅读">📖 Reading</option>
-                        <option value="其他">📦 Others</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>标签</label>
-                    <input type="text" id="res-tags" placeholder="用逗号分隔，如：口语, 听力, 写作">
-                </div>
-                <div class="form-group">
-                    <label>备注</label>
-                    <textarea id="res-note" rows="3" placeholder="简短描述这个资源..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeResourceModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveResource()">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Note Modal -->
-    <div class="modal-overlay" id="note-modal">
-        <div class="modal modal-large">
-            <div class="modal-header">
-                <h2 id="note-modal-title">新建笔记</h2>
-                <button class="modal-close" onclick="closeNoteModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>标题 *</label>
-                    <input type="text" id="note-title" placeholder="笔记标题">
-                </div>
-                <div class="form-group">
-                    <label>关联资源</label>
-                    <select id="note-resource">
-                        <option value="">无关联</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>标签</label>
-                    <input type="text" id="note-tags" placeholder="用逗号分隔">
-                </div>
-                <div class="form-group">
-                    <label>内容 (支持 Markdown)</label>
-                    <textarea id="note-content" rows="12" placeholder="在这里写下你的学习笔记...&#10;&#10;支持 Markdown 语法：&#10;# 标题&#10;**加粗** *斜体*&#10;- 列表项&#10;> 引用&#10;`代码`"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeNoteModal()">取消</button>
-                <button class="btn btn-primary" onclick="saveNote()">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Checkin Detail Modal -->
-    <div class="modal-overlay" id="checkin-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>今日打卡</h2>
-                <button class="modal-close" onclick="closeCheckinModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>今天有什么想记录的？</label>
-                    <textarea id="checkin-content" rows="4" placeholder="简单记录一下今天的学习内容..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>学习时长（分钟）</label>
-                    <input type="number" id="checkin-duration" placeholder="60" min="1" max="1440">
-                </div>
-                <div class="form-group">
-                    <label>今日心情</label>
-                    <div class="mood-selector">
-                        <button class="mood-btn" onclick="selectMood('😊', this)" title="开心">😊</button>
-                        <button class="mood-btn" onclick="selectMood('🎉', this)" title="超棒">🎉</button>
-                        <button class="mood-btn" onclick="selectMood('🤔', this)" title="思考">🤔</button>
-                        <button class="mood-btn" onclick="selectMood('😢', this)" title="不开心">😢</button>
-                        <button class="mood-btn" onclick="selectMood('😤', this)" title="焦虑">😤</button>
-                        <button class="mood-btn" onclick="selectMood('😫', this)" title="疲惫">😫</button>
-                        <button class="mood-btn" onclick="selectMood('😴', this)" title="困">😴</button>
-                        <button class="mood-btn" onclick="selectMood('💪', this)" title="充实">💪</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>打卡城市</label>
-                    <input type="text" id="checkin-city" placeholder="例：北京、东京、新加坡...">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeCheckinModal()">取消</button>
-                <button class="btn btn-primary" onclick="confirmCheckin()">确认打卡</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+<!-- ======== Auth Gate ======== -->
+<div id="auth-gate" class="auth-gate">
+<div class="auth-card">
+<div class="auth-logo">
+<span class="logo-icon">📚</span>
+<span class="logo-text">Learning Hub</span>
+</div>
+<p class="auth-prompt">请回答验证问题以进入</p>
+<div class="auth-question">Emma的AI娃叫什么？</div>
+<div class="auth-form">
+<input type="text" id="auth-input" placeholder="输入答案..." autocomplete="off" autofocus>
+<button class="btn btn-primary auth-btn" onclick="verifyAnswer()">验证</button>
+</div>
+<div class="auth-error" id="auth-error"></div>
+</div>
+</div>
+<!-- ======== Main App (hidden until auth) ======== -->
+<div id="app" class="app-hidden">
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-header">
+<div class="logo">
+<span class="logo-icon">📚</span>
+<span class="logo-text">Learning Hub</span>
+</div>
+</div>
+<nav class="nav-menu">
+<a href="#" class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+<span class="nav-icon">📊</span>
+<span>仪表盘</span>
+</a>
+<a href="#" class="nav-item" data-page="resources" onclick="switchPage('resources', this)">
+<span class="nav-icon">🔗</span>
+<span>学习资源</span>
+</a>
+<a href="#" class="nav-item" data-page="checkin" onclick="switchPage('checkin', this)">
+<span class="nav-icon">✅</span>
+<span>学习打卡</span>
+</a>
+<a href="#" class="nav-item" data-page="notes" onclick="switchPage('notes', this)">
+<span class="nav-icon">📝</span>
+<span>学习笔记</span>
+</a>
+</nav>
+<div class="sidebar-footer">
+<div class="streak-badge">
+<span class="fire">🔥</span>
+<span id="sidebar-streak">0</span> 天连续打卡
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="main-content">
+<!-- Dashboard Page -->
+<div class="page active" id="page-dashboard">
+<div class="page-header">
+<h1>学习仪表盘</h1>
+<p class="subtitle" id="today-date"></p>
+</div>
+<div class="stats-grid">
+<div class="stat-card gradient-purple">
+<div class="stat-icon">📚</div>
+<div class="stat-info">
+<div class="stat-number" id="stat-resources">0</div>
+<div class="stat-label">学习资源</div>
+</div>
+</div>
+<div class="stat-card gradient-blue">
+<div class="stat-icon">✅</div>
+<div class="stat-info">
+<div class="stat-number" id="stat-checkins">0</div>
+<div class="stat-label">总打卡天数</div>
+</div>
+</div>
+<div class="stat-card gradient-green">
+<div class="stat-icon">🔥</div>
+<div class="stat-info">
+<div class="stat-number" id="stat-streak">0</div>
+<div class="stat-label">连续打卡</div>
+</div>
+</div>
+<div class="stat-card gradient-orange">
+<div class="stat-icon">📝</div>
+<div class="stat-info">
+<div class="stat-number" id="stat-notes">0</div>
+<div class="stat-label">学习笔记</div>
+</div>
+</div>
+</div>
+<div class="dashboard-grid">
+<div class="card heatmap-card">
+<div class="card-header">
+<h3>📅 学习热力图</h3>
+<span class="year-label" id="heatmap-year"></span>
+</div>
+<div class="heatmap-wrapper">
+<div class="heatmap-months" id="heatmap-months"></div>
+<div class="heatmap-container">
+<div class="heatmap-days-label">
+<span>Mon</span><span>Wed</span><span>Fri</span>
+</div>
+<div class="heatmap" id="heatmap"></div>
+</div>
+<div class="heatmap-legend">
+<span>少</span>
+<div class="legend-box" style="background: #1a1a2e"></div>
+<div class="legend-box" style="background: #4a3f8a"></div>
+<div class="legend-box" style="background: #7c5cbf"></div>
+<div class="legend-box" style="background: #a78bfa"></div>
+<div class="legend-box" style="background: #c4b5fd"></div>
+<span>多</span>
+</div>
+</div>
+</div>
+<div class="card recent-card">
+<div class="card-header">
+<h3>⚡ 最近动态</h3>
+</div>
+<div class="recent-list" id="recent-activity">
+<div class="empty-state-small">暂无动态，开始学习吧！</div>
+</div>
+</div>
+</div>
+<div class="card platform-card">
+<div class="card-header">
+<h3>📦 类别分布</h3>
+</div>
+<div class="platform-bars" id="platform-bars">
+<div class="empty-state-small">添加资源后显示类别分布</div>
+</div>
+</div>
+</div>
+<!-- Resources Page -->
+<div class="page" id="page-resources">
+<div class="page-header">
+<h1>学习资源</h1>
+<button class="btn btn-primary" onclick="openResourceModal()">
+<span>＋</span> 添加资源
+</button>
+</div>
+<div class="filter-bar">
+<div class="search-box">
+<span class="search-icon">🔍</span>
+<input type="text" id="resource-search" placeholder="搜索资源..." oninput="filterResources()">
+</div>
+<div class="filter-tags" id="filter-tags">
+<button class="tag-btn active" onclick="filterByCategory('all', this)">全部</button>
+</div>
+</div>
+<div class="resources-grid" id="resources-grid">
+<div class="empty-state">
+<div class="empty-icon">📭</div>
+<h3>还没有学习资源</h3>
+<p>点击「添加资源」开始聚合你的学习内容</p>
+</div>
+</div>
+</div>
+<!-- Check-in Page -->
+<div class="page" id="page-checkin">
+<div class="page-header">
+<h1>学习打卡</h1>
+<button class="btn btn-primary" id="checkin-btn" onclick="doCheckin()">
+<span>✅</span> 今日打卡
+</button>
+</div>
+<div class="checkin-hero">
+<div class="checkin-streak-display">
+<div class="streak-number" id="checkin-streak-num">0</div>
+<div class="streak-label">天连续打卡</div>
+</div>
+<div class="checkin-today-status" id="checkin-today-status">今日尚未打卡</div>
+</div>
+<div class="card">
+<div class="card-header">
+<button class="btn btn-ghost" onclick="changeMonth(-1)">◀</button>
+<h3 id="calendar-month-label"></h3>
+<button class="btn btn-ghost" onclick="changeMonth(1)">▶</button>
+</div>
+<div class="calendar-grid" id="calendar-grid"></div>
+</div>
+<div class="card" style="margin-top: 24px;">
+<div class="card-header">
+<h3>📋 打卡记录</h3>
+</div>
+<div class="checkin-log" id="checkin-log">
+<div class="empty-state-small">暂无打卡记录</div>
+</div>
+</div>
+</div>
+<!-- Notes Page -->
+<div class="page" id="page-notes">
+<div class="page-header">
+<h1>学习笔记</h1>
+<button class="btn btn-primary" onclick="openNoteModal()">
+<span>＋</span> 新建笔记
+</button>
+</div>
+<div class="notes-layout">
+<div class="notes-list" id="notes-list">
+<div class="empty-state">
+<div class="empty-icon">📝</div>
+<h3>还没有笔记</h3>
+<p>点击「新建笔记」记录你的学习心得</p>
+</div>
+</div>
+<div class="note-preview" id="note-preview">
+<div class="empty-state">
+<div class="empty-icon">👈</div>
+<h3>选择一个笔记查看</h3>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Resource Modal -->
+<div class="modal-overlay" id="resource-modal">
+<div class="modal">
+<div class="modal-header">
+<h2 id="resource-modal-title">添加学习资源</h2>
+<button class="modal-close" onclick="closeResourceModal()">✕</button>
+</div>
+<div class="modal-body">
+<div class="form-group">
+<label>资源名称 *</label>
+<input type="text" id="res-name" placeholder="例：English Grammar In Use">
+</div>
+<div class="form-group">
+<label>链接 URL *</label>
+<input type="url" id="res-url" placeholder="https://...">
+</div>
+<div class="form-group">
+<label>学习类别</label>
+<select id="res-category">
+<option value="英语">🇬🇧 English</option>
+<option value="西班牙语">🇪🇸 Español</option>
+<option value="AI">🤖 AI & Tech</option>
+<option value="Human Resources">👥 HR & People</option>
+<option value="阅读">📖 Reading</option>
+<option value="其他">📦 Others</option>
+</select>
+</div>
+<div class="form-group">
+<label>标签</label>
+<input type="text" id="res-tags" placeholder="用逗号分隔，如：口语, 听力, 写作">
+</div>
+<div class="form-group">
+<label>备注</label>
+<textarea id="res-note" rows="3" placeholder="简短描述这个资源..."></textarea>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-ghost" onclick="closeResourceModal()">取消</button>
+<button class="btn btn-primary" onclick="saveResource()">保存</button>
+</div>
+</div>
+</div>
+<!-- Note Modal -->
+<div class="modal-overlay" id="note-modal">
+<div class="modal modal-large">
+<div class="modal-header">
+<h2 id="note-modal-title">新建笔记</h2>
+<button class="modal-close" onclick="closeNoteModal()">✕</button>
+</div>
+<div class="modal-body">
+<div class="form-group">
+<label>标题 *</label>
+<input type="text" id="note-title" placeholder="笔记标题">
+</div>
+<div class="form-group">
+<label>关联资源</label>
+<select id="note-resource">
+<option value="">无关联</option>
+</select>
+</div>
+<div class="form-group">
+<label>标签</label>
+<input type="text" id="note-tags" placeholder="用逗号分隔">
+</div>
+<div class="form-group">
+<label>内容 (支持 Markdown)</label>
+<textarea id="note-content" rows="12" placeholder="在这里写下你的学习笔记...&#10;&#10;支持 Markdown 语法：&#10;# 标题&#10;**加粗** *斜体*&#10;- 列表项&#10;> 引用&#10;`代码`"></textarea>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-ghost" onclick="closeNoteModal()">取消</button>
+<button class="btn btn-primary" onclick="saveNote()">保存</button>
+</div>
+</div>
+</div>
+<!-- Checkin Detail Modal -->
+<div class="modal-overlay" id="checkin-modal">
+<div class="modal">
+<div class="modal-header">
+<h2>今日打卡</h2>
+<button class="modal-close" onclick="closeCheckinModal()">✕</button>
+</div>
+<div class="modal-body">
+<div class="form-group">
+<label>今天有什么想记录的？</label>
+<textarea id="checkin-content" rows="4" placeholder="简单记录一下今天的学习内容..."></textarea>
+</div>
+<div class="form-group">
+<label>学习时长（分钟）</label>
+<input type="number" id="checkin-duration" placeholder="60" min="1" max="1440">
+</div>
+<div class="form-group">
+<label>今日心情</label>
+<div class="mood-selector">
+<button class="mood-btn" onclick="selectMood('😊', this)" title="开心">😊</button>
+<button class="mood-btn" onclick="selectMood('🎉', this)" title="超棒">🎉</button>
+<button class="mood-btn" onclick="selectMood('🤔', this)" title="思考">🤔</button>
+<button class="mood-btn" onclick="selectMood('😢', this)" title="不开心">😢</button>
+<button class="mood-btn" onclick="selectMood('😤', this)" title="焦虑">😤</button>
+<button class="mood-btn" onclick="selectMood('😫', this)" title="疲惫">😫</button>
+<button class="mood-btn" onclick="selectMood('😴', this)" title="困">😴</button>
+<button class="mood-btn" onclick="selectMood('💪', this)" title="充实">💪</button>
+</div>
+</div>
+<div class="form-group">
+<label>打卡城市</label>
+<input type="text" id="checkin-city" placeholder="例：北京、东京、新加坡...">
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-ghost" onclick="closeCheckinModal()">取消</button>
+<button class="btn btn-primary" onclick="confirmCheckin()">确认打卡</button>
+</div>
+</div>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
